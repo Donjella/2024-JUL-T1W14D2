@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 
@@ -6,7 +6,6 @@ app = Flask(__name__)
 
 app.config["SQLALCHEMY_DATABASE_URI"]="postgresql+psycopg2://ecommerce_dev:123456@localhost:5432/jul_ecommerce"
 
-# these 2 needs to be done after the config
 db = SQLAlchemy(app)
 ma = Marshmallow(app)
 
@@ -22,16 +21,16 @@ class Product(db.Model):
     price = db.Column(db.Float)
     stock = db.Column(db.Integer)
 
-# Schema (to convert to JSON, a marshmallow schema)
+# Schema
 class ProductSchema(ma.Schema):
     class Meta:
+        # fields
         fields = ("id", "name", "description", "price", "stock")
 
 # to handle multiple products
 products_schema = ProductSchema(many=True)
-
 # to handle a single product
-product_schema = ProductSchema() # default value of many is False
+product_schema = ProductSchema()
 
 # CLI Commands
 @app.cli.command("create")
@@ -70,15 +69,13 @@ def seed_db():
 # update a product - /products/id - PUT, PATCH
 # delete a product - /products/id - DELETE
 
-# above is convention used by backend developers when they create an API
-
 
 # CRUD for products
-# R of CRUD - Read - GET (default method is the GET method)
+# R of CRUD - Read - GET
 @app.route("/products")
 def get_products():
-    stmt = db.select(Product) # similar to SELECT * FROM products;
-    products_list = db.session.scalars(stmt) #if we expecting multiple data, we add "s" to scalar
+    stmt = db.select(Product) # SELECT * FROM products;
+    products_list = db.session.scalars(stmt)
     data = products_schema.dump(products_list)
     return data
 
@@ -91,3 +88,16 @@ def get_product(product_id):
         return data
     else:
         return {"message": f"Product with id {product_id} does not exist"}, 404
+
+@app.route("/products", methods=["POST"])
+def create_product():
+    body_data = request.get_json()
+    new_product = Product(
+        name=body_data.get("name"),
+        description=body_data.get("description"),
+        price=body_data.get("price"),
+        stock=body_data.get("stock")
+    )
+    db.session.add(new_product)
+    db.session.commit()
+    return product_schema.dump(new_product), 201
