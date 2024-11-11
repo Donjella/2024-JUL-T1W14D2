@@ -192,5 +192,15 @@ def get_categories():
     stmt = db.select(Category) # SELECT * FROM category - db is the SQLalchemy instance, select is SQLalchemy method and category is the model
     categories_list = db.session.scalars(stmt) # stmt is a shortform for statement
     # convert this list of python objects into a serialisable format of JSON
-    data = categories_schema.dump(categories_list)
+    data = categories_schema.dump(categories_list) # using marshmallow's schema
     return data
+    
+@app.route("/categories/<int:category_id>")
+def get_category(category_id):
+    stmt = db.select(Category).filter_by(id=category_id) # SELECT * FROM categories WHERE id=category_id;
+    category = db.session.scalar(stmt)
+    if category:
+        data = category_schema.dump(category)
+        return data
+    else:
+        return {"message": f"Category with id {category_id} does not exist"}
