@@ -6,10 +6,10 @@ app = Flask(__name__)
 
 app.config["SQLALCHEMY_DATABASE_URI"]="postgresql+psycopg2://ecommerce_dev:123456@localhost:5432/jul_ecommerce"
 
-db = SQLAlchemy(app)
+db = SQLAlchemy(app) # Instance of SQLalchemy class
 ma = Marshmallow(app)
 
-# Model - Table
+# Model - i.e. Tables
 class Product(db.Model):
     # define tablename
     __tablename__ = "products"
@@ -21,16 +21,32 @@ class Product(db.Model):
     price = db.Column(db.Float)
     stock = db.Column(db.Integer)
 
+class Category(db.Model):
+    __tablename__ = "categories"
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False, unique=True)
+    description = db.Column(db.String(100))
+
 # Schema
 class ProductSchema(ma.Schema):
     class Meta:
         # fields
         fields = ("id", "name", "description", "price", "stock")
 
+class CategorySchema(ma.Schema):
+    class Meta:
+        fields = ("id", "name", "description")
+
+
 # to handle multiple products
 products_schema = ProductSchema(many=True)
 # to handle a single product
 product_schema = ProductSchema()
+
+# to handle multiple categories
+categories_schema = CategorySchema(many=True) # default value of menu is false
+# to handle a single category
+category_schema = CategorySchema()
 
 # CLI Commands
 @app.cli.command("create")
@@ -45,7 +61,7 @@ def drop_tables():
 
 @app.cli.command("seed")
 def seed_db():
-    # create a product object
+    # create a product object, below are two examples of how to create 
     product1 = Product(
         name="Product 1",
         description="Product 1 description",
@@ -59,6 +75,25 @@ def seed_db():
     # add to session
     db.session.add(product1)
     db.session.add(product2)
+
+    # create a list of categories of object
+    categories = [
+        Category(
+            name="Category 1",
+            description="Category 1 desc"
+        ),
+        Category(
+            name="Category 2",
+            description="Category 2 desc"
+        ),
+        Category(
+            name="Category 3",
+        )
+    ]
+
+    # add the list to the session
+    db.session.add_all(categories)
+
     # commit
     db.session.commit()
     print("Tables seeded")
