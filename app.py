@@ -106,7 +106,7 @@ def seed_db():
 
 
 # CRUD for products
-# R of CRUD - Read - GET
+# R of CRUD - Read - GET - method can be left out because GET is default method
 @app.route("/products")
 def get_products():
     stmt = db.select(Product) # SELECT * FROM products;
@@ -178,3 +178,19 @@ def update_product(product_id):
     else:
         # respond with an error message
         return {"message": f"Product with id {product_id} does not exist"}, 404
+
+# CRUD for categories
+# Read all categories - /categories - GET
+# Read a single category - /categories/id - GET
+# Create category -/categories - POST
+# Update category - /categories/id - PUT or PATCH
+# Delete category - /categories/id - DELETE
+
+# Read all categories - /categories - GET
+@app.route("/categories", methods=["GET"])
+def get_categories():
+    stmt = db.select(Category) # SELECT * FROM category - db is the SQLalchemy instance, select is SQLalchemy method and category is the model
+    categories_list = db.session.scalars(stmt) # stmt is a shortform for statement
+    # convert this list of python objects into a serialisable format of JSON
+    data = categories_schema.dump(categories_list)
+    return data
